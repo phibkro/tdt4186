@@ -89,3 +89,10 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// prints info on all running processes to the console
+void
+sys_pdumps(void)
+{
+  pdumps();
+}

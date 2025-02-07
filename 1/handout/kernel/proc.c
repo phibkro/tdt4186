@@ -681,3 +681,18 @@ procdump(void)
     printf("\n");
   }
 }
+
+// prints info on all running processes to the console
+void
+pdumps(void)
+{
+  for (struct proc *p = proc; p < &proc[NPROC]; p++)
+  {
+    if (p->state == UNUSED) continue;
+
+    printf("%s (%d): %d\n",
+      p->name, 
+      p->pid, 
+      p->state);
+  }
+}
