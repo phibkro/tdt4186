@@ -1,0 +1,30 @@
+$ time sh load.sh
+19 62 277 
+Executing sh took 27 ticks
+$ time sh load.sh
+11 35 181 
+Executing sh took 26 ticks
+$ time sh load.sh 
+34 101 465 
+Executing sh took 26 ticks
+$ time sh load.sh
+16 53 250 
+Executing sh took 27 ticks
+$ time sh load.sh
+14 41 213 
+Executing sh took 26 ticks
+$ time sh load.sh
+30 93 442 
+Executing sh took 26 ticks
+$ time sh load.sh
+10 32 177 
+Executing sh took 26 ticks
+$ time sh load.sh
+24 74 353 
+Executing sh took 26 ticks
+$ time sh load.sh
+35 111 538 
+Executing sh took 25 ticks
+$ time sh load.sh
+19 59 283 
+Executing sh took 26 ticks
