@@ -838,9 +838,11 @@ void schedset(int id)
     printf("Scheduler successfully changed to %s\n", available_schedulers[id].name);
 }
 
+#define QUEUE_CAPACITY NPROC
+
 typedef struct
 {
-    struct proc *items[NPROC];
+    struct proc *items[QUEUE_CAPACITY];
     int front, rear, size;
 } ProcQueue;
 
@@ -853,7 +855,7 @@ void queue_init(ProcQueue *q)
 
 void enqueue(ProcQueue *q, struct proc *p)
 {
-    if (NPROC <= q->size)
+    if (QUEUE_CAPACITY <= q->size)
     {
         printf("\nQueue is Full!!");
         return;
@@ -862,7 +864,7 @@ void enqueue(ProcQueue *q, struct proc *p)
     if (q->front == -1)
         q->front = 0;
 
-    if (NPROC <= q->rear)
+    if (QUEUE_CAPACITY <= q->rear)
     {
         q->rear = 0;
     }
@@ -885,7 +887,7 @@ struct proc *dequeue(ProcQueue *q)
     struct proc *p = q->items[q->front];
     q->items[q->front] = 0;
 
-    if (NPROC <= q->front)
+    if (QUEUE_CAPACITY <= q->front)
     {
         q->front = 0;
     }
