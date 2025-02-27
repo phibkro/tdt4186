@@ -32,6 +32,7 @@ typedef struct scheduler_impl
 #define SCHEDC 3
 static SchedImpl available_schedulers[SCHEDC] = {
     {"Round Robin", &rr_scheduler, 1},
+    {"MLFQ", &mlfq, 2},
     {"High-Low", &high_low_scheduler, 3}};
 
 void (*sched_pointer)(void) = &rr_scheduler;
@@ -901,6 +902,100 @@ struct proc *dequeue(ProcQueue *q)
 
     q->size--;
     return p;
+}
+
+#define TIME_ALLOTMENT 10
+#define REFRESH_TIME 500
+
+/* Multi Level Feedback Queue Scheduler */
+// Rule 1: If Priority(A) > Priority(B), A runs (B doesn't)
+// Rule 2: If Priority(A) = Priority(B), A & B run in RR.
+// Rule 3: When a job enters the system, it is placed at the highest priority (the topmost queue)
+// Rule 4a: If a job uses up its allotment while running, its priority is reduced (it moved down one queue)
+// Rule 4b: If a job gives up the CPU before the allotment is up, it stays at the same priority level
+// Rule 5: After some time period S, move all jobs in the system to the topmost queue
+void mlfq(void)
+{
+    struct cpu *c = mycpu();
+
+    c->proc = 0;
+    // Avoid deadlock by ensuring that devices can interrupt.
+    intr_on();
+
+    ProcQueue high;
+    ProcQueue low;
+
+    queue_init(&high);
+    queue_init(&low);
+
+    if (ticks % REFRESH_TIME == 0)
+    {
+        for (struct proc *p = proc; p < &proc[NPROC]; p++)
+        {
+            p->priority = 0;
+            enqueue(&high, p);
+        }
+    }
+    else
+    {
+        for (struct proc *p = proc; p < &proc[NPROC]; p++)
+        {
+            if (p->priority == 0)
+            {
+                enqueue(&high, p);
+            }
+            else
+            {
+                enqueue(&low, p);
+            }
+        }
+    }
+
+loop:
+    ProcQueue *non_empty_queue;
+
+    /* Pick a queue */
+    if (high.size != 0)
+    {
+        non_empty_queue = &high;
+    }
+    else if (low.size != 0)
+    {
+        non_empty_queue = &low;
+    }
+    else
+    {
+        // printf("No running processes");
+        // release(&p->lock);
+        return;
+    }
+
+    struct proc *p = dequeue(non_empty_queue);
+
+    acquire(&p->lock);
+    if (RUNNABLE != p->state)
+    {
+        release(&p->lock);
+        goto loop;
+    }
+
+    int current_time = ticks;
+
+    p->state = RUNNING;
+    c->proc = p;
+    swtch(&c->context, &p->context);
+
+    c->proc = 0;
+
+    release(&p->lock);
+    if (TIME_ALLOTMENT <= current_time - ticks)
+    {
+        enqueue(&low, p);
+    }
+    else
+    {
+        enqueue(&high, p);
+    }
 }
 
 void high_low_scheduler(void)
