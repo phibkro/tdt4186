@@ -29,9 +29,10 @@ typedef struct scheduler_impl
 
 // Register all available schedulers here
 // also update schedc, this indicates how long the SchedImpl array is
-#define SCHEDC 1
+#define SCHEDC 3
 static SchedImpl available_schedulers[SCHEDC] = {
-    {"Round Robin", &rr_scheduler, 1}};
+    {"Round Robin", &rr_scheduler, 1},
+    {"High-Low", &high_low_scheduler, 3}};
 
 void (*sched_pointer)(void) = &rr_scheduler;
 
@@ -834,4 +835,134 @@ void schedset(int id)
     }
     sched_pointer = available_schedulers[id].impl;
     printf("Scheduler successfully changed to %s\n", available_schedulers[id].name);
+}
+
+typedef struct
+{
+    struct proc *items[NPROC];
+    int front, rear, size;
+} ProcQueue;
+
+void queue_init(ProcQueue *q)
+{
+    q->front = -1;
+    q->rear = -1;
+    q->size = 0;
+}
+
+void enqueue(ProcQueue *q, struct proc *p)
+{
+    if (NPROC <= q->size)
+    {
+        printf("\nQueue is Full!!");
+        return;
+    }
+
+    if (q->front == -1)
+        q->front = 0;
+
+    if (NPROC <= q->rear)
+    {
+        q->rear = 0;
+    }
+    else
+    {
+        q->rear++;
+    }
+
+    q->items[q->rear] = p;
+    q->size++;
+}
+
+struct proc *dequeue(ProcQueue *q)
+{
+    if (0 >= q->size)
+    {
+        printf("\nQueue is Empty!!");
+    }
+
+    struct proc *p = q->items[q->front];
+    q->items[q->front] = 0;
+
+    if (NPROC <= q->front)
+    {
+        q->front = 0;
+    }
+    else
+    {
+        q->front++;
+    }
+
+    if (q->front > q->rear)
+    {
+        q->front = -1;
+        q->rear = -1;
+    }
+
+    q->size--;
+    return p;
+}
+
+void high_low_scheduler(void)
+{
+    struct cpu *c = mycpu();
+
+    c->proc = 0;
+    // Avoid deadlock by ensuring that devices can interrupt.
+    intr_on();
+
+    ProcQueue high;
+    ProcQueue low;
+
+    queue_init(&high);
+    queue_init(&low);
+
+    for (struct proc *p = proc; p < &proc[NPROC]; p++)
+    {
+        if (p->priority == 0)
+        {
+            enqueue(&high, p);
+        }
+        else
+        {
+            enqueue(&low, p);
+        }
+    }
+
+loop:
+    ProcQueue *non_empty_queue;
+
+    /* Pick a queue */
+    if (high.size != 0)
+    {
+        non_empty_queue = &high;
+    }
+    else if (low.size != 0)
+    {
+        non_empty_queue = &low;
+    }
+    else
+    {
+        // printf("No running processes");
+        // release(&p->lock);
+        return;
+    }
+
+    struct proc *p = dequeue(non_empty_queue);
+
+    acquire(&p->lock);
+    if (RUNNABLE != p->state)
+    {
+        release(&p->lock);
+        goto loop;
+    }
+
+    p->state = RUNNING;
+    c->proc = p;
+    swtch(&c->context, &p->context);
+
+    c->proc = 0;
+
+    release(&p->lock);
+    enqueue(non_empty_queue, p);
 }
