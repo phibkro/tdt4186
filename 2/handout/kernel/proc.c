@@ -906,8 +906,7 @@ struct proc *dequeue(ProcQueue *q)
     return p;
 }
 
-#define TIME_ALLOTMENT 10
-#define REFRESH_TIME 500
+#define REFRESH_TICKS 20
 
 /* Multi Level Feedback Queue Scheduler */
 // Rule 1: If Priority(A) > Priority(B), A runs (B doesn't)
@@ -930,7 +929,7 @@ void mlfq(void)
     queue_init(&high);
     queue_init(&low);
 
-    if (ticks % REFRESH_TIME == 0)
+    if (ticks % REFRESH_TICKS == 0)
     {
         for (struct proc *p = proc; p < &proc[NPROC]; p++)
         {
@@ -990,13 +989,13 @@ loop:
     c->proc = 0;
 
     release(&p->lock);
-    if (TIME_ALLOTMENT <= current_time - ticks)
+    if (ticks - current_time != 0)
     {
         enqueue(&low, p);
     }
     else
     {
-        enqueue(&high, p);
+        enqueue(&non_empty_queue, p);
     }
 }
 
