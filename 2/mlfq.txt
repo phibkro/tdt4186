@@ -1,0 +1,37 @@
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+init: starting sh
+$ schedset 2
+Scheduler successfully changed to MLFQ
+$ time sh load.sh
+55 166 771 
+Executing sh took 30 ticks
+$ time sh load.sh
+55 165 754 
+Executing sh took 34 ticks
+$ time sh load.sh
+75 233 1062 
+Executing sh took 31 ticks
+$ time sh load.sh
+47 149 703 
+Executing sh took 31 ticks
+$ time sh load.sh
+61 181 867 
+Executing sh took 31 ticks
+$ time sh load.sh
+53 171 828 
+Executing sh took 31 ticks
+$ time sh load.sh
+68 218 1019 
+Executing sh took 32 ticks
+$ time sh load.sh
+61 194 931 
+Executing sh took 32 ticks
+$ time sh load.sh
+81 252 1196 
+Executing sh took 31 ticks
+$ time sh load.sh
+46 144 677 
+Executing sh took 36 ticks
