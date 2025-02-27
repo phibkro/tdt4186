@@ -33,7 +33,7 @@ typedef struct scheduler_impl
 static SchedImpl available_schedulers[SCHEDC] = {
     {"Round Robin", &rr_scheduler, 1},
     {"MLFQ", &mlfq, 2},
-    {"High-Low", &high_low_scheduler, 3}};
+    {"HighLow", &high_low_scheduler, 3}};
 
 void (*sched_pointer)(void) = &rr_scheduler;
 
@@ -857,7 +857,7 @@ void enqueue(ProcQueue *q, struct proc *p)
 {
     if (QUEUE_CAPACITY <= q->size)
     {
-        printf("\nQueue is Full!!");
+        printf("Queue is Full!!\n");
         return;
     }
 
@@ -881,7 +881,7 @@ struct proc *dequeue(ProcQueue *q)
 {
     if (0 >= q->size)
     {
-        printf("\nQueue is Empty!!");
+        printf("Queue is Empty!!\n");
     }
 
     struct proc *p = q->items[q->front];
