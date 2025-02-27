@@ -907,6 +907,7 @@ struct proc *dequeue(ProcQueue *q)
 }
 
 #define REFRESH_TICKS 20
+#define PROC_QUEUE_SIZE 3
 
 /* Multi Level Feedback Queue Scheduler */
 // Rule 1: If Priority(A) > Priority(B), A runs (B doesn't)
@@ -923,53 +924,41 @@ void mlfq(void)
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
-    ProcQueue high;
-    ProcQueue low;
+    ProcQueue queues[PROC_QUEUE_SIZE];
 
-    queue_init(&high);
-    queue_init(&low);
+    for (ProcQueue *q = queues; q < &queues[PROC_QUEUE_SIZE]; q++)
+        queue_init(q);
 
     if (ticks % REFRESH_TICKS == 0)
     {
         for (struct proc *p = proc; p < &proc[NPROC]; p++)
         {
             p->priority = 0;
-            enqueue(&high, p);
+            enqueue(&queues[0], p);
         }
     }
     else
     {
         for (struct proc *p = proc; p < &proc[NPROC]; p++)
-        {
-            if (p->priority == 0)
-            {
-                enqueue(&high, p);
-            }
-            else
-            {
-                enqueue(&low, p);
-            }
-        }
+            enqueue(&queues[p->priority], p);
     }
 
 loop:
-    ProcQueue *non_empty_queue;
+    ProcQueue *non_empty_queue = 0;
 
     /* Pick a queue */
-    if (high.size != 0)
+
+    for (ProcQueue *q = queues; q < &queues[PROC_QUEUE_SIZE]; q++)
     {
-        non_empty_queue = &high;
+        if (q->size != 0)
+        {
+            non_empty_queue = q;
+            break;
+        }
     }
-    else if (low.size != 0)
-    {
-        non_empty_queue = &low;
-    }
-    else
-    {
-        // printf("No running processes");
-        // release(&p->lock);
+
+    if (non_empty_queue == 0)
         return;
-    }
 
     struct proc *p = dequeue(non_empty_queue);
 
@@ -991,11 +980,19 @@ loop:
     release(&p->lock);
     if (ticks - current_time != 0)
     {
-        enqueue(&low, p);
+        int i = p->priority;
+        if (PROC_QUEUE_SIZE < i + 1)
+        {
+            enqueue(&queues[PROC_QUEUE_SIZE], p);
+        }
+        else
+        {
+            enqueue(&queues[i++], p);
+        }
     }
     else
     {
-        enqueue(&non_empty_queue, p);
+        enqueue(non_empty_queue, p);
     }
 }
 
