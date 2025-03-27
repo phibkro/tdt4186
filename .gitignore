@@ -1,2 +1,18 @@
 .DS_Store
 .vscode
+
+# Build artifacts
+*.d
+*.o
+_*
+*.asm
+*.sym
+
+**/kernel/kernel
+test.ans
+fs.img
+.gdbinit
+usys.S
+initcode
+mkfs
+system.info
