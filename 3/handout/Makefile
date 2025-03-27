@@ -138,6 +138,7 @@ UPROGS=\
 	$U/_congen\
 	$U/_schedls\
 	$U/_schedset\
+	$U/_vatopa\
 	$U/_cowtest\
 	
 
