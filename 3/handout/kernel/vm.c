@@ -347,15 +347,17 @@ copyonwrite(pagetable_t old, pagetable_t new, uint64 sz)
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
 
-    if (flags | PTE_W) // if write flag is set
-      flags |= PTE_S; // add the shared flag
-    flags &= ~PTE_W; // remove the write flag
+    // set flags for new page table to read-only and shared
+    flags |= PTE_S;
+    flags &= ~PTE_W;
 
+    // map new page table to existing physical page
     if(mappages(new, i, PGSIZE, pa, flags) != 0){
       kfree((void *) pa);
       goto err;
     }
 
+    // set old page flags read-only and shared
     *pte |= PTE_S;
     *pte &= ~PTE_W;
 
