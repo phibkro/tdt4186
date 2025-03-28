@@ -72,6 +72,12 @@ void *kalloc(void);
 void kfree(void *);
 void kinit(void);
 void page_free(void *);
+// Page Reference Count Get
+uint64 pgrc_get(void *); 
+// Page Reference Count Add
+void pgrc_add(void *);
+// Page Reference Count Remove
+void pgrc_remove(void *);
 
 // log.c
 void initlog(int, struct superblock *);

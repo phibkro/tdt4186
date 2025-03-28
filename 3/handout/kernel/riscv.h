@@ -349,6 +349,8 @@ typedef uint64 *pagetable_t; // 512 PTEs
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
 
 #define PTE2PA(pte) (((pte) >> 10) << 12)
+// Physical Address To Page Reference Index
+#define PA2PGRI(pa) (pa >> PGSHIFT)
 
 #define PTE_FLAGS(pte) ((pte) & 0x3FF)
 

@@ -28,6 +28,40 @@ struct
     struct run *freelist;
 } kmem;
 
+// Page Reference Counter
+// (max PA - min PA) / PAGE_SIZE = max PAGES
+uint8 pgrc[(PHYSTOP - KERNBASE) / PGSIZE];
+
+// Page Reference Count Init
+void pgrc_init(void)
+{
+    memset(pgrc, 0, sizeof(pgrc));
+}
+
+// Page Reference Count Get
+// Get the reference count for the page associated with the physical address
+uint64 pgrc_get(void *pa)
+{
+    return pgrc[PA2PGRI((uint64)pa)];
+}
+
+// Increase the shared memory counter
+void pgrc_add(void *pa)
+{
+    pgrc[PA2PGRI((uint64)pa)]++;
+}
+
+// Decrease the shared memory counter
+// If the counter is 0 call the free function
+void pgrc_remove(void *pa)
+{
+    if (pgrc_get(pa) > 0)
+        pgrc[PA2PGRI((uint64)pa)]--;
+
+    if (pgrc_get(pa) != 0) return;
+        page_free(pa);
+}
+
 // Frees the page tied to the physical address
 void page_free(void *pa)
 {
@@ -47,6 +81,7 @@ void kinit()
 {
     initlock(&kmem.lock, "kmem");
     freerange(end, (void *)PHYSTOP);
+    pgrc_init();
     MAX_PAGES = FREE_PAGES;
 }
 
@@ -72,7 +107,7 @@ void kfree(void *pa)
     if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP)
         panic("kfree");
 
-    page_free(pa);
+    pgrc_remove(pa);
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -91,7 +126,10 @@ kalloc(void)
     release(&kmem.lock);
 
     if (r)
+    {
         memset((char *)r, 5, PGSIZE); // fill with junk
+        pgrc_add((void *)r);
+    }
     FREE_PAGES--;
     return (void *)r;
 }
